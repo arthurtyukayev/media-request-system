@@ -81,6 +81,8 @@ def filter_and_clean(raw_results):
         result['upload_date'] = result['upload_date'].replace('Uploaded', '').strip().replace(" ", "-")
         result['file_size'] = result['file_size'].replace('Size', '').strip()
 
+        result['magnet'] = result['magnet'][0]
+
         """ Converting the file size to kilobytes """
         if result['file_size'].split(' ')[1] not in ['KiB', 'MiB', 'GiB']:
             continue

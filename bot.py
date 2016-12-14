@@ -44,7 +44,7 @@ def on_callback_query(msg):
                                    body=message + " Request something else. Sorry.")
         else:
             post_response = requests.post(url=environ.get("TORRENT_CLIENT_URL") + "/command/download",
-                                          data={'urls': magnets[int(magnet_id_index)][0]},
+                                          data={'urls': magnets[int(magnet_id_index)][1]},
                                           auth=HTTPDigestAuth(environ.get("TORRENT_CLIENT_USERNAME"),
                                                               environ.get("TORRENT_CLIENT_PASSWORD")))
             if post_response.status_code == 200:
@@ -58,6 +58,16 @@ def on_callback_query(msg):
                     movie['release_date'].split("-")[0], user)
                 client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"),
                                        body=message)
+
+                post_response = requests.get(url=environ.get("TORRENT_CLIENT_URL") + "/json/torrents",
+                                             auth=HTTPDigestAuth(environ.get("TORRENT_CLIENT_USERNAME"),
+                                                                 environ.get("TORRENT_CLIENT_PASSWORD")))
+                active_torrents = post_response.json()
+                for torrent in active_torrents:
+                    if torrent['name'] == magnets[int(magnet_id_index)][0]:
+                        hm = {"user": user,
+                              "movie_title": "{} ({})".format(movie['title'], movie['release_date'].split("-")[0])}
+                        r.hmset("torrent_hashes:" + torrent['hash'], hm)
             else:
                 message = "{} ({}) download could not be started for {}.".format(movie['title'],
                                                                                  movie['release_date'].split("-")[0],
@@ -98,7 +108,7 @@ def on_callback_query(msg):
 
             magnet_links = []
             for torrent in torrents:
-                magnet_links.append(torrent['magnet'])
+                magnet_links.append((torrent['name'], torrent['magnet']))
             r.hset("request:" + request_id, "torrent_selection_message_id", telegram_response['message_id'])
             r.hset("request:" + request_id, "magnet_links", str(magnet_links))
 

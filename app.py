@@ -99,4 +99,4 @@ def incoming_sms():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host=environ.get("FLASK_HOST"), port=int(environ.get("FLASK_PORT")))
+    app.run(debug=True, host=environ.get("FLASK_HOST"), port=int(environ.get("PORT")))
