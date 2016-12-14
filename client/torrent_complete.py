@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import requests
 import redis
+import configparser
 from requests.auth import HTTPDigestAuth
 from requests.exceptions import ConnectionError
 from requests.packages.urllib3.exceptions import ProtocolError
@@ -16,34 +17,29 @@ from twilio.rest import TwilioRestClient
     requests
 """
 
-# FileBot stuff, you will need to install FileBot to name your files, if you don't want to install it
-# Just set USE_FILEBOT to False
-PATH_TO_FILEBOT_EXE = None  # "C:\Program Files\FileBot\\filebot.exe"
-USE_FILBOT = False
-# The path to your Plex folder where you want your movies moved into.
-PATH_TO_PLEX_FOLDER = None  # "D:\Plex\Movies\"
-# You need enabled qBitTorrent's Web UI and set a username and password
-URL_FOR_TORRENT_CLIENT = None  # "http://127.0.0.1:80
-TORRENT_USER_NAME = None  # "admin"
-TORRENT_PASSWORD = None  # "admin"
-# This will get the path from the torrent client.
+config = configparser.ConfigParser()
+config.read('torrent_complete_config.ini')
+
+PATH_TO_FILEBOT_EXE = config['filebot'].get("PATH_TO_FILEBOT_EXE")
+USE_FILBOT = config['filebot'].getboolean('USE_FILEBOT')
+PATH_TO_PLEX_FOLDER = config['plex'].get("PATH_TO_PLEX_FOLDER")
+URL_FOR_TORRENT_CLIENT = config['torrent'].get("URL_FOR_TORRENT_CLIENT")
+TORRENT_USER_NAME = config['torrent'].get('TORRENT_USER_NAME')
+TORRENT_PASSWORD = config['torrent'].get('TORRENT_PASSWORD')
 PATH_TO_DOWNLOADS_FOLDER = sys.argv[1]
-# Builds the name of the torrent from the sys.argv list
 TORRENT_NAME = ""
 for arg in sys.argv[2:]:
     TORRENT_NAME = TORRENT_NAME + arg + " "
 TORRENT_NAME = TORRENT_NAME.strip()
-# Twilio Integration to notify your user of movie completion.
-# If you don't want to use Twilio set the USE_TWILIO flag to false
-USE_TWILIO = False
-TWILIO_ACCOUNT_SID = None
-TWILIO_AUTH_TOKEN = None
-TWILIO_PHONE_NUMBER = None
+USE_TWILIO = config['twilio'].getboolean('USE_TWILIO')
+TWILIO_ACCOUNT_SID = config['twilio'].get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = config['twilio'].get("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = config['twilio'].get("TWILIO_PHONE_NUMBER")
 client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-# REDIS STUFF
-REDIS_PW = None
-REDIS_HOST = None
-REDIS_PORT = None
+REDIS_URL = config['redis'].get("REDIS_URL")
+REDIS_PW = REDIS_URL.rsplit(":", 1)[0].rsplit("@", 1)[0][10:]
+REDIS_HOST = REDIS_URL.rsplit(":", 1)[0].rsplit("@", 1)[1]
+REDIS_PORT = REDIS_URL.rsplit(":", 1)
 r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PW,
                       decode_responses=True)
 
