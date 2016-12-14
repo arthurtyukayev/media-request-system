@@ -46,30 +46,32 @@ def incoming_sms():
             resp.message(reply)
             return str(resp)
         # Checks to see if the user has an expired movie request.
-        if (int(time.time()) - previous_request['time_requested']) > 30:
+        if (int(time.time()) - int(previous_request['time_requested'])) > 30:
             reply = "You'r previous request has expired. Please make a new request."
             resp.message(reply)
             return str(resp)
 
         uuid_gen = str(uuid4())
         movie = ast.literal_eval(previous_request['requested_movie'])
-        r.hmset("request:{}".format(uuid_gen), {"movie": movie, "user": number, "time": int(time.time())})
 
         # Request Approval Bot Message
         buttons = [
-            [dict(text='Approve', callback_data=uuid_gen + '_true')],
-            [dict(text='Deny', callback_data=uuid_gen + '_false')]
+            [dict(text='Approve', callback_data="request_" + uuid_gen + '_true')],
+            [dict(text='Deny', callback_data="request_" + uuid_gen + '_false')]
         ]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         text = "<b>Movie Request</b>\n {} has requested the following movie.\n" \
-               "\n<b>Title</b>: {}\n<b>Year</b> {}\n<b>Overview</b>: {}.".format(
+               "\n<b>Title</b>: {}\n<b>Year</b> {}\n<b>Overview</b>: {}".format(
             number,
             movie['title'],
             movie['release_date'].split("-")[0],
             movie['overview'])
         try:
-            bot.sendMessage(chat_id=environ.get('TELEGRAM_APPROVAL_CHAT_ID'), text=text, reply_markup=markup,
-                            parse_mode="HTML")
+            telegram_response = bot.sendMessage(chat_id=environ.get('TELEGRAM_APPROVAL_CHAT_ID'), text=text,
+                                                reply_markup=markup,
+                                                parse_mode="HTML")
+            r.hmset("request:{}".format(uuid_gen), {"movie": movie, "user": number, "time": int(time.time()),
+                                                    "approval_message_id": telegram_response['message_id']})
         except BadHTTPResponse as e:
             pass
 
@@ -90,7 +92,7 @@ def incoming_sms():
         r.hmset("users:" + number, {"requested_movie": search.results[0], "time_requested": int(time.time())})
 
         # Reply with the movie title
-        reply = "You've requested \"{0}\" {1}, if this is correct reply \"Yes\", otherwise please make a more specific request.".format(
+        reply = "You've requested {0} ({1}), if this is correct reply \"Yes\", otherwise please make a more specific request.".format(
             request_movie, search.results[0]['release_date'].split("-")[0])
         resp.message(reply)
         return str(resp)
