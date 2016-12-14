@@ -117,6 +117,11 @@ def on_callback_query(msg):
                                                                                       movie['release_date'].split("-")[
                                                                                           0])
             client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"), body=message)
+            message = "{} ({}) has been denied for {}".format(movie['title'], movie['release_date'].split("-")[0], user)
+            bot.editMessageText(
+                msg_identifier=(environ.get("TELEGRAM_APPROVAL_CHAT_ID"), request_message_id),
+                text=message,
+                reply_markup=None)
             pass
 
 
