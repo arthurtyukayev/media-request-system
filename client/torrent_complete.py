@@ -18,7 +18,11 @@ from twilio.rest import TwilioRestClient
 """
 
 config = configparser.ConfigParser()
-config.read('torrent_complete_config.ini')
+"""
+    Find your torrent_complete_config.ini file, which should be in the same folder as this file.
+    If you're on windows make sure you escape your path.
+"""
+config.read("PATH_TO_CONFIG_INI")
 
 PATH_TO_FILEBOT_EXE = config['filebot'].get("PATH_TO_FILEBOT_EXE")
 USE_FILBOT = config['filebot'].getboolean('USE_FILEBOT')
@@ -39,7 +43,7 @@ client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 REDIS_URL = config['redis'].get("REDIS_URL")
 REDIS_PW = REDIS_URL.rsplit(":", 1)[0].rsplit("@", 1)[0][10:]
 REDIS_HOST = REDIS_URL.rsplit(":", 1)[0].rsplit("@", 1)[1]
-REDIS_PORT = REDIS_URL.rsplit(":", 1)
+REDIS_PORT = int(REDIS_URL.rsplit(":", 1)[1])
 r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PW,
                       decode_responses=True)
 
@@ -74,6 +78,7 @@ for torrent in active_torrents:
                 print(post_response.status_code)
                 if post_response.status_code == 200:
                     repeat = False
+                    break
             except ConnectionError as e:
                 pass
             except ConnectionResetError as e:
