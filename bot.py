@@ -113,7 +113,7 @@ def on_callback_query(msg):
             r.hset("request:" + request_id, "magnet_links", str(magnet_links))
 
         elif boolean == 'false':
-            message = "{} ({}) has been denied. It was probably sucks anyway.".format(movie['title'],
+            message = "{} ({}) has been denied. It probably sucks anyway.".format(movie['title'],
                                                                                       movie['release_date'].split("-")[
                                                                                           0])
             client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"), body=message)
