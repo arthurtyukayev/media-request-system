@@ -3,3 +3,4 @@ twilio
 tmdbsimple
 redis
 telepot
+lxml
