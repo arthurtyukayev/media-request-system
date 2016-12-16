@@ -103,5 +103,5 @@ def filter_and_clean(raw_results):
 
 
 if __name__ == '__main__':
-    torrents = get_torrent_listings("Hillsong - Let Hope Rise (2016)", 207)[0]
-    pprint(torrents)
+    torrents = get_torrent_listings("Hillsong - Let Hope Rise (2016)", 207)
+    pprint(torrents[0:4])

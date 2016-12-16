@@ -6,10 +6,12 @@ from telepot import Bot
 from telepot.exception import BadHTTPResponse
 from uuid import uuid4
 from plexapi.server import PlexServer
+from datetime import datetime
 import tmdbsimple as tmdb
 import redis
 import time
 import ast
+import time
 
 app = Flask(__name__)
 
@@ -79,7 +81,7 @@ def incoming_sms():
         except BadHTTPResponse as e:
             pass
 
-        reply = "Great! Your request is pending approval. P.S It has a better chance of being approved if you bribe Arthur."
+        reply = "Great! Your request is pending approval."
         resp.message(reply)
         return str(resp)
 
@@ -92,6 +94,8 @@ def incoming_sms():
         return str(resp)
     else:
         request_movie = search.results[0]['title']
+        request_movie_release_date_in_seconds = int(
+            time.mktime(datetime.strptime(search.results[0]['release_date'][2:], "%y-%m-%d").timetuple()))
 
         plex_movies = plex.library.section('Movies')
         for movie in plex_movies.search():
@@ -101,6 +105,14 @@ def incoming_sms():
                     request_movie, search.results[0]['release_date'].split("-")[0])
                 resp.message(reply)
                 return str(resp)
+
+        current_time_in_seconds = int(time.mktime(datetime.now().timetuple()))
+        if request_movie_release_date_in_seconds + int(
+                environ.get("MONTHS_TO_BLURAY_RELEASE_IN_SECONDS")) > current_time_in_seconds:
+            reply = "The movie {} ({}) is too new and is probably still in theaters. Go see it there.".format(
+                request_movie, search.results[0]['release_date'].split("-")[0])
+            resp.message(reply)
+            return str(resp)
 
         r.hmset("users:" + number, {"requested_movie": search.results[0], "time_requested": int(time.time())})
 
