@@ -2,6 +2,7 @@ from urllib import parse
 from lxml import etree
 from io import StringIO
 from pprint import pprint
+import re
 
 import requests
 
@@ -13,6 +14,9 @@ def get_torrent_listings(search_term, catagory_int):
 
     search_term :: search term string, ex 'iron man 2008'
     """
+    # Format the search term for TPB search
+    search_term = re.sub(r'[^a-zA-Z0-9 ]', '', search_term)
+    search_term = search_term.replace("  ", " ")
 
     # Format the URL with with the encoded search term and send the GET request
     search_results_url = 'https://thepiratebay.org/search/{}/0/99/{}'.format(parse.quote(search_term.lower().strip()),
@@ -99,5 +103,5 @@ def filter_and_clean(raw_results):
 
 
 if __name__ == '__main__':
-    torrents = get_torrent_listings('iron man 2008', 207)[0]
+    torrents = get_torrent_listings("Hillsong - Let Hope Rise (2016)", 207)[0]
     pprint(torrents)

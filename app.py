@@ -5,6 +5,7 @@ from telepot.namedtuple import InlineKeyboardMarkup
 from telepot import Bot
 from telepot.exception import BadHTTPResponse
 from uuid import uuid4
+from plexapi.server import PlexServer
 import tmdbsimple as tmdb
 import redis
 import time
@@ -21,6 +22,9 @@ bot = Bot(environ.get("TELEGRAM_BOT_TOKEN"))
 # Redis
 r = redis.StrictRedis(host=environ.get('REDIS_HOST'), port=environ.get('REDIS_PORT'), password=environ.get('REDIS_PW'),
                       decode_responses=True)
+
+# Plex API
+plex = PlexServer(environ.get("PLEX_URL"), environ.get("PLEX_AUTH_STRING"))
 
 
 @app.route("/")
@@ -88,6 +92,15 @@ def incoming_sms():
         return str(resp)
     else:
         request_movie = search.results[0]['title']
+
+        plex_movies = plex.library.section('Movies')
+        for movie in plex_movies.search():
+            if movie == request_movie:
+                # Reply that movie is already available.
+                reply = "The movie {} ({}) is already available. Ignoring this request.".format(
+                    request_movie, search.results[0]['release_date'].split("-")[0])
+                resp.message(reply)
+                return str(resp)
 
         r.hmset("users:" + number, {"requested_movie": search.results[0], "time_requested": int(time.time())})
 

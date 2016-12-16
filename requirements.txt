@@ -4,3 +4,4 @@ tmdbsimple
 redis
 telepot
 lxml
+plexapi
