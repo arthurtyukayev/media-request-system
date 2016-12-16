@@ -95,7 +95,7 @@ def incoming_sms():
 
         plex_movies = plex.library.section('Movies')
         for movie in plex_movies.search():
-            if movie == request_movie:
+            if movie.title == request_movie:
                 # Reply that movie is already available.
                 reply = "The movie {} ({}) is already available. Ignoring this request.".format(
                     request_movie, search.results[0]['release_date'].split("-")[0])
