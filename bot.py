@@ -66,7 +66,9 @@ def on_callback_query(msg):
                 for torrent in active_torrents:
                     if torrent['name'] == magnets[int(magnet_id_index)][0]:
                         hm = {"user": user,
-                              "movie_title": "{} ({})".format(movie['title'], movie['release_date'].split("-")[0])}
+                              "movie_title": "{} ({})".format(movie['title'], movie['release_date'].split("-")[0]),
+                              "time_created": int(round(time.time())),
+                              }
                         r.hmset("torrent_hashes:" + torrent['hash'], hm)
             else:
                 message = "{} ({}) download could not be started for {}.".format(movie['title'],
@@ -114,8 +116,8 @@ def on_callback_query(msg):
 
         elif boolean == 'false':
             message = "{} ({}) has been denied. It probably sucks anyway.".format(movie['title'],
-                                                                                      movie['release_date'].split("-")[
-                                                                                          0])
+                                                                                  movie['release_date'].split("-")[
+                                                                                      0])
             client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"), body=message)
             message = "{} ({}) has been denied for {}".format(movie['title'], movie['release_date'].split("-")[0], user)
             bot.editMessageText(
