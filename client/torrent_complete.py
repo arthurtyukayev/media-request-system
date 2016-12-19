@@ -98,7 +98,11 @@ for torrent in active_torrents:
             except ProtocolError as e:
                 pass
 
-search_for_largest_file(PATH_TO_DOWNLOADS_FOLDER + TORRENT_NAME)
+if os.path.isfile(PATH_TO_DOWNLOADS_FOLDER + "\\" + TORRENT_NAME):
+    search_for_largest_file(PATH_TO_DOWNLOADS_FOLDER)
+else:
+    search_for_largest_file(PATH_TO_DOWNLOADS_FOLDER + "\\" + TORRENT_NAME)
+
 if movie[1] != -1:
     download_directory_file_name = movie[0].rsplit("\\", 1)[1]
     download_directory_file_path = movie[0].rsplit("\\", 1)[0]

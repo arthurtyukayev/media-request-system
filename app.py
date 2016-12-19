@@ -97,22 +97,29 @@ def incoming_sms():
         request_movie_release_date_in_seconds = int(
             time.mktime(datetime.strptime(search.results[0]['release_date'][2:], "%y-%m-%d").timetuple()))
 
-        plex_movies = plex.library.section('Movies')
-        for movie in plex_movies.search():
-            if movie.title == request_movie:
-                # Reply that movie is already available.
-                reply = "The movie {} ({}) is already available. Ignoring this request.".format(
+        # Checks the Plex server for the requested movie to make sure it's not
+        # already available. If is, it will decline the request and notify requester.
+        # Default is
+        if int(environ.get("DECLINE_EXISTING_MEDIA", 0)) == 1:
+            plex_movies = plex.library.section('Movies')
+            for movie in plex_movies.search():
+                if movie.title == request_movie:
+                    # Reply that movie is already available.
+                    reply = "The movie {} ({}) is already available. Ignoring this request.".format(
+                        request_movie, search.results[0]['release_date'].split("-")[0])
+                    resp.message(reply)
+                    return str(resp)
+
+        # Checks to make sure the requested movie isn't too new.
+        # If is, it will decline the request and notify requester.
+        if int(environ.get("DECLINE_TOO_RECENT_MEDIA", 0)) == 1:
+            current_time_in_seconds = int(time.mktime(datetime.now().timetuple()))
+            if request_movie_release_date_in_seconds + int(
+                    environ.get("MONTHS_TO_BLURAY_RELEASE_IN_SECONDS")) > current_time_in_seconds:
+                reply = "The movie {} ({}) is too new and is probably still in theaters. Go see it there.".format(
                     request_movie, search.results[0]['release_date'].split("-")[0])
                 resp.message(reply)
                 return str(resp)
-
-        current_time_in_seconds = int(time.mktime(datetime.now().timetuple()))
-        if request_movie_release_date_in_seconds + int(
-                environ.get("MONTHS_TO_BLURAY_RELEASE_IN_SECONDS")) > current_time_in_seconds:
-            reply = "The movie {} ({}) is too new and is probably still in theaters. Go see it there.".format(
-                request_movie, search.results[0]['release_date'].split("-")[0])
-            resp.message(reply)
-            return str(resp)
 
         r.hmset("users:" + number, {"requested_movie": search.results[0], "time_requested": int(time.time())})
 
