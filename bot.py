@@ -94,26 +94,41 @@ def on_callback_query(msg):
             category_int = 207
             torrents = get_torrent_listings(search_query, category_int)[0:4]
 
-            # Send the approver a torrent picker.
-            message = "Here are the torrent options for {} ({}).".format(movie['title'],
-                                                                         movie['release_date'].split("-")[0])
-            buttons = []
-            for torrent in torrents:
-                buttons.append(
-                    [dict(text=torrent['name'], callback_data="torrents_" + request_id + "_" + str(len(buttons)))])
-            buttons.append([dict(text="None of these", callback_data="torrents_" + request_id + "_none")])
-            markup = InlineKeyboardMarkup(inline_keyboard=buttons)
-            telegram_response = bot.editMessageText(
-                msg_identifier=(environ.get("TELEGRAM_APPROVAL_CHAT_ID"), request_message_id),
-                text=message,
-                reply_markup=markup)
+            # Checks to see if there was a results from the search, if not, create option to search again.
+            # This is mostly because TPB is spotty and they sometimes are down.
+            if len(torrents) == 0:
+                message = "No suitable download options for {} ({}).".format(movie['title'],
+                                                                             movie['release_date'].split("-")[0])
+                buttons = [[dict(text="Search Again", callback_data="request_" + request_id + "_re")],
+                           [dict(text="None of these", callback_data="request_" + request_id + "_none")]]
+                markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+                telegram_response = bot.editMessageText(
+                    msg_identifier=(int(environ.get("TELEGRAM_APPROVAL_CHAT_ID")), msg['message']['message_id']),
+                    text=message,
+                    reply_markup=markup)
+                request_data['approval_message_id'] = telegram_response['message_id']
+                r.hmset("request:{}".format(request_id), request_data)
+                return
+            else:
+                # Send the approver a torrent picker.
+                message = "Here are the torrent options for {} ({}).".format(movie['title'],
+                                                                             movie['release_date'].split("-")[0])
+                buttons = []
+                for torrent in torrents:
+                    buttons.append(
+                        [dict(text=torrent['name'], callback_data="torrents_" + request_id + "_" + str(len(buttons)))])
+                buttons.append([dict(text="None of these", callback_data="torrents_" + request_id + "_none")])
+                markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+                telegram_response = bot.editMessageText(
+                    msg_identifier=(environ.get("TELEGRAM_APPROVAL_CHAT_ID"), msg['message']['message_id']),
+                    text=message,
+                    reply_markup=markup)
 
-            magnet_links = []
-            for torrent in torrents:
-                magnet_links.append((torrent['name'], torrent['magnet']))
-            r.hset("request:" + request_id, "torrent_selection_message_id", telegram_response['message_id'])
-            r.hset("request:" + request_id, "magnet_links", str(magnet_links))
-
+                magnet_links = []
+                for torrent in torrents:
+                    magnet_links.append((torrent['name'], torrent['magnet']))
+                r.hset("request:" + request_id, "torrent_selection_message_id", telegram_response['message_id'])
+                r.hset("request:" + request_id, "magnet_links", str(magnet_links))
         elif boolean == 'false':
             message = "{} ({}) has been denied. It probably sucks anyway.".format(movie['title'],
                                                                                   movie['release_date'].split("-")[
@@ -121,10 +136,65 @@ def on_callback_query(msg):
             client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"), body=message)
             message = "{} ({}) has been denied for {}".format(movie['title'], movie['release_date'].split("-")[0], user)
             bot.editMessageText(
-                msg_identifier=(environ.get("TELEGRAM_APPROVAL_CHAT_ID"), request_message_id),
+                msg_identifier=(int(environ.get("TELEGRAM_APPROVAL_CHAT_ID")), msg['message']['message_id']),
                 text=message,
                 reply_markup=None)
             pass
+        elif boolean == 're':
+            search_query = "{} {}".format(movie['title'], movie['release_date'].split("-")[0])
+            category_int = 207
+            torrents = get_torrent_listings(search_query, category_int)[0:4]
+
+            # Checks to see if there was a results from the search, if not, create option to search again.
+            # This is mostly because TPB is spotty and they sometimes are down.
+            if len(torrents) == 0:
+                response = requests.get('http://thepiratebay.org')
+                tpb_status = None
+                if response.status_code == 200:
+                    tpb_status = "TPB is still up."
+                else:
+                    tpb_status = "TPB is down."
+
+                message = "Still no suitable download options for {} ({}).\n\n<b>{}</b>".format(
+                    movie['title'],
+                    movie['release_date'].split("-")[0], tpb_status)
+                buttons = []
+                buttons.append([dict(text="Search Again", callback_data="request_" + request_id + "_re")])
+                buttons.append([dict(text="None of these", callback_data="request_" + request_id + "_none")])
+                markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+                bot.editMessageText(
+                    msg_identifier=(int(environ.get("TELEGRAM_APPROVAL_CHAT_ID")), msg['message']['message_id']),
+                    text=message, parse_mode="HTML", reply_markup=markup
+                )
+                r.hmset("request:{}".format(request_id), request_data)
+                return
+            else:
+                # Send the approver a torrent picker.
+                message = "Here are the torrent options for {} ({}).".format(movie['title'],
+                                                                             movie['release_date'].split("-")[0])
+                buttons = []
+                for torrent in torrents:
+                    buttons.append(
+                        [dict(text=torrent['name'], callback_data="torrents_" + request_id + "_" + str(len(buttons)))])
+                buttons.append([dict(text="None of these", callback_data="torrents_" + request_id + "_none")])
+                markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+                bot.editMessageText(
+                    msg_identifier=int(environ.get("TELEGRAM_APPROVAL_CHAT_ID"), msg['message']['message_id']),
+                    text=message,
+                    reply_markup=markup)
+
+                magnet_links = []
+                for torrent in torrents:
+                    magnet_links.append((torrent['name'], torrent['magnet']))
+                r.hset("request:" + request_id, "magnet_links", str(magnet_links))
+        elif boolean == "none":
+            message = "There is no suitable download for {} ({}).".format(movie['title'], movie[
+                'release_date'].split("-")[0])
+            bot.editMessageText(
+                msg_identifier=(int(environ.get("TELEGRAM_APPROVAL_CHAT_ID")), msg['message']['message_id']),
+                text=message + "\nNotifying requester.")
+            client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"),
+                                   body=message + " Request something else. Sorry.")
 
 
 bot.message_loop({'chat': on_chat_message, 'callback_query': on_callback_query})
