@@ -11,6 +11,7 @@ from requests.auth import HTTPDigestAuth
 
 # Bot Initialize
 bot = Bot(environ.get("TELEGRAM_BOT_TOKEN"))
+
 # Redis
 r = redis.StrictRedis(host=environ.get('REDIS_HOST'), port=environ.get('REDIS_PORT'), password=environ.get('REDIS_PW'),
                       decode_responses=True)
