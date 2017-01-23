@@ -53,7 +53,7 @@ def incoming_sms():
             return str(resp)
         # Checks to see if the user has an expired movie request.
         if (int(time.time()) - int(previous_request['time_requested'])) > 30:
-            reply = "You'r previous request has expired. Please make a new request."
+            reply = "Your previous request has expired. Please make a new request."
             resp.message(reply)
             return str(resp)
 
