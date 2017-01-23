@@ -131,7 +131,7 @@ def on_callback_query(msg):
                 r.hset("request:" + request_id, "torrent_selection_message_id", telegram_response['message_id'])
                 r.hset("request:" + request_id, "magnet_links", str(magnet_links))
         elif boolean == 'false':
-            message = "{} ({}) has been denied. It probably sucks anyway.".format(movie['title'],
+            message = "{} ({}) has been denied. There is a reason for it, but you will need to ask Arthur for it.".format(movie['title'],
                                                                                   movie['release_date'].split("-")[
                                                                                       0])
             client.messages.create(to=user, from_=environ.get("TWILIO_PHONE_NUMBER"), body=message)
